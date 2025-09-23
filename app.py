@@ -2,6 +2,8 @@ from flask import Flask, redirect, render_template, request, session, flash, url
 from flask_session import Session # pyright: ignore[reportMissingImports]
 from flask_sqlalchemy import SQLAlchemy # type: ignore
 from werkzeug.security import generate_password_hash, check_password_hash  # type: ignore
+from sqlalchemy.exc import IntegrityError # type: ignore
+from sqlalchemy import update # type: ignore
 
 app = Flask(__name__)
 
@@ -58,9 +60,9 @@ def register():
         try:
             db.session.add(new_user)
             db.session.commit()
-        except Exception:
+        except IntegrityError:
             db.session.rollback()
-            flash("An error occour", "error")
+            flash("Email already used.", "error")
             return redirect(url_for("register"))
         flash("Successfully registered", "success")
         return redirect(url_for("login"))
@@ -93,3 +95,27 @@ def login():
 def logout():
     session.clear()
     return redirect(url_for("login"))
+
+@app.route("/profile", methods=["GET", "POST"])
+def profile():
+    if request.method == "POST":
+        id = request.form.get("id")
+        name = request.form.get("name")
+        email = request.form.get("email")
+        if not all([id, name, email]):
+            flash("You need to enter all fields.", "error")
+            return redirect(url_for("profile"))
+        try:
+            
+            stmt = (update(Users).where(Users.id==id).values(name=name, email=email))
+            db.session.execute(stmt)
+            db.session.commit()
+            session["user_name"] = name;
+            session["user_email"] = email;
+            return render_template("profile.html")
+        except IntegrityError:
+            flash("Email already used by another user!", "error")
+            db.session.rollback()
+            return redirect(url_for("profile"))
+    else:
+        return render_template("profile.html")
