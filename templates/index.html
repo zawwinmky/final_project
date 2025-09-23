@@ -1,5 +1,76 @@
 {% extends "layout.html" %}
 
 {% block body %}
-    
+    <div class="container-fluid">
+        <div class="text-start">
+            <!-- modal button -->
+            <button type="button" class="btn btn-outline-dark position-fixed" data-bs-toggle="modal" data-bs-target="#myModal" style="bottom: 20px; left: 20px; z-index: 100;">
+                Write email
+            </button>
+            <!-- Modal -->
+            <div class="modal fade" id="myModal">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+
+                        <!-- Modal Header -->
+                        <div class="modal-header">
+                            <h4 class="modal-title">Write Email</h4>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <form id="email_form">
+                            <!-- Modal body -->
+                            <div class="modal-body">
+                                <label for="receiver_email">Send to:</label><br>
+                                <input class="form-control mb-2" name="receiver_email" type="email" placeholder="Receiver's email address">
+                                <label for="subject">Subject:</label><br>
+                                <input class="form-control mb-2" type="text" name="subject" placeholder="Enter subject">
+                                <textarea rows="5" name="body" placeholder="Write a message" style="color: black;">
+                                </textarea>
+                            </div>
+                            
+                            <!-- Modal footer -->
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Close</button>
+                                <button type="submit" class="btn btn-outline-success"> Send </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <script>
+                const emailForm = document.getElementById('email_form');
+                emailForm.addEventListener('submit', async function(event) {
+                    event.preventDefault(); 
+                    
+                    const form = event.target;
+                    const formData = new FormData(form);
+                    try {
+                        const response = await fetch('/send_email', 
+                            {
+                                method: 'POST',
+                                body: formData
+                            });
+
+                        const data = await response.json()
+                        if(!response.ok){
+                            throw new Error(data.message);
+                        }
+
+                        alert(data.message);
+                        form.reset();
+                        const myModal = bootstrap.Modal.getInstance(document.getElementById('myModal'));
+                        if (myModal) {
+                            myModal.hide();
+                        }
+                    } catch (error){
+                        alert(error.message);
+                    }
+                });
+            </script>
+        </div>
+        <div class="row justify-content-center d-flex">
+            <div class="col-2 btn btn-outline-dark">Inbox</div>
+            <div class="col-2">Sent box</div>
+        </div>
+    </div>
 {% endblock %}

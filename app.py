@@ -1,9 +1,10 @@
-from flask import Flask, redirect, render_template, request, session, flash, url_for # pyright: ignore[reportMissingImports]
+from flask import Flask, redirect, render_template, request, session, flash, url_for, jsonify # pyright: ignore[reportMissingImports]
 from flask_session import Session # pyright: ignore[reportMissingImports]
 from flask_sqlalchemy import SQLAlchemy # type: ignore
 from werkzeug.security import generate_password_hash, check_password_hash  # type: ignore
 from sqlalchemy.exc import IntegrityError # type: ignore
 from sqlalchemy import update # type: ignore
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -14,7 +15,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 
 db = SQLAlchemy(app)
 Session(app)
-
 
 #database models
 
@@ -42,6 +42,50 @@ with app.app_context():
 def index():
     return render_template("index.html")
 
+@app.route("/send_email", methods=["POST"])
+def send_email():
+    sender = session["user_id"]
+    receiver_email = request.form.get("receiver_email")
+    subject = request.form.get("subject")
+    body = request.form.get("body")
+    receiver = Users.query.filter_by(email=receiver_email).first()
+    if receiver_email == session["user_email"]:
+        return jsonify({
+            'status':'error',
+            'message':"Can't send email to yourself!!"
+            }), 500
+    if not receiver:
+        return jsonify({
+            'status': 'error',
+            'message': 'No user with that email'
+        }), 404
+        
+    new_email = Emails(sender=sender,
+    receiver=receiver.id,
+    subject=subject,
+    body=body,
+    timestamp=datetime.now())
+    try:
+        db.session.add(new_email)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        return jsonify({
+            'status': 'error',
+            'message': 'An internal server error occured'
+            }), 500
+        
+    return jsonify({
+        'status': 'success',
+        'message': 'Email successfully sent',
+    }), 200
+    
+    
+@app.route("/get_update")
+def get_update():
+    user_id = session["user_id"]
+    sent_mails = Emails.query.filter_by(sender=user_id).all()
+    return jsonify(sent_mails)
 
 @app.route("/register", methods=["POST", "GET"])
 def register():
@@ -106,12 +150,11 @@ def profile():
             flash("You need to enter all fields.", "error")
             return redirect(url_for("profile"))
         try:
-            
             stmt = (update(Users).where(Users.id==id).values(name=name, email=email))
             db.session.execute(stmt)
             db.session.commit()
-            session["user_name"] = name;
-            session["user_email"] = email;
+            session["user_name"] = name
+            session["user_email"] = email
             return render_template("profile.html")
         except IntegrityError:
             flash("Email already used by another user!", "error")

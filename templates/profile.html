@@ -3,24 +3,28 @@
 {% block title %} Profile {% endblock %}
 
 {% block body %}
-    <div class="text-start">
-        <form action="/profile" method="post">
-            <input type="hidden" value=" {{ session['user_id']}} " name="id">
-            <div class="mb-3">
-                Profile details
+    <div class="container">
+        <div class="row d-flex justify-content-center text-start">
+            <div class="col-4">
+                <form action="/profile" method="post">
+                    <input type="hidden" value=" {{ session['user_id']}} " name="id">
+                    <div class="mb-3" style="font-size: larger; font-weight:bold">
+                        Profile details
+                    </div>
+                    <div class="my-3">
+                        <label for="name" style="font-weight: bold;">Name:</label>
+                        <input type="text" name="name" value="{{ session['user_name'] }}" id="nameInput" style="display: none;"> <p id="nameText" style="display: inline-block; margin-bottom:0;"> {{ session['user_name']}} </p>
+                    </div>
+                    <div class="my-3">
+                        <label for="email" style="font-weight: bold;">Email:</label>
+                        <input type="email" name="email" value="{{ session['user_email'] }}" id="emailInput" style="display: none;">
+                        <p id="emailText" style="display: inline-block; margin-bottom:0;"> {{ session['user_email'] }}</p>
+                    </div>
+                    <input class="btn btn-outline-dark" type="button" id="editBtn" value="Edit profile">
+                    <input class="btn btn-outline-dark" type="submit" id="submitBtn" value="Update" style="display: none;">
+                </form>
             </div>
-            <div class="my-3">
-                <label for="name">Name:</label>
-                <input type="text" name="name" value="{{ session['user_name'] }}" id="nameInput" style="display: none;"> <p id="nameText" style="display: inline-block; margin-bottom:0;"> {{ session['user_name']}} </p>
-            </div>
-            <div class="my-3">
-                <label for="email">Email:</label>
-                <input type="email" name="email" value="{{ session['user_email'] }}" id="emailInput" style="display: none;">
-                <p id="emailText" style="display: inline-block; margin-bottom:0;"> {{ session['user_email'] }}</p>
-            </div>
-            <input class="btn btn-outline-dark" type="button" id="editBtn" value="Edit profile">
-            <input class="btn btn-outline-dark" type="submit" id="submitBtn" value="Update" style="display: none;">
-        </form>
+        </div>
     </div>
 
     <script>
