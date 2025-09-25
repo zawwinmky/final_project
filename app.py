@@ -55,63 +55,6 @@ def login_require(f):
 def index():
     return render_template("index.html")
 
-@app.route("/send_email", methods=["POST"])
-def send_email():
-    sender = session["user_id"]
-    receiver_email = request.form.get("receiver_email")
-    subject = request.form.get("subject")
-    body = request.form.get("body")
-    if not receiver_email:
-        return jsonify({
-            'status': 'error',
-            'message':"You must add receiver's email address!"
-        }), 500
-    if not subject:
-        subject = "Default subject"
-    
-    no_body = {'status':'error','message':"You can't send an empty email!"}
-    
-    if not body:
-        return jsonify(no_body), 500
-    receiver = Users.query.filter_by(email=receiver_email).first()
-    if receiver_email == session["user_email"]:
-        return jsonify({
-            'status':'error',
-            'message':"Can't send email to yourself!!"
-            }), 500
-    if not receiver:
-        return jsonify({
-            'status': 'error',
-            'message': 'No user with that email'
-        }), 404
-        
-    new_email = Emails(sender=sender,
-    receiver=receiver.id,
-    subject=subject,
-    body=body,
-    timestamp=datetime.now())
-    try:
-        db.session.add(new_email)
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-        return jsonify({
-            'status': 'error',
-            'message': 'An internal server error occured'
-            }), 500
-        
-    return jsonify({
-        'status': 'success',
-        'message': 'Email successfully sent',
-    }), 200
-    
-    
-@app.route("/get_update")
-def get_update():
-    user_id = session["user_id"]
-    sent_mails = Emails.query.filter_by(sender=user_id).all()
-    return jsonify(sent_mails)
-
 @app.route("/register", methods=["POST", "GET"])
 def register():
     if 'user_id' in session:
@@ -122,21 +65,34 @@ def register():
         password = request.form.get("password") 
         cpassword = request.form.get("cpassword")
         if not all([name, email, password, cpassword,]):
-            flash("You need to enter all fields", "error")
-            return redirect(url_for("register"))
+            message = {
+                'status':'error',
+                'message':'You need to enter all fields'
+            }
+            return jsonify(message), 422
         if password != cpassword:
-            flash("Password must be same", "error")
-            return redirect(url_for("register"))
+            message = {
+                'status':'error',
+                'message':'Password must be same.'
+            }
+            return jsonify(message), 422
         new_user = Users(name=name, email=email, password=generate_password_hash(password))
         try:
             db.session.add(new_user)
             db.session.commit()
         except IntegrityError:
             db.session.rollback()
-            flash("Email already used.", "error")
-            return redirect(url_for("register"))
-        flash("Successfully registered", "success")
-        return redirect(url_for("login"))
+            message = {
+                'status':'error',
+                'message':'Email already used'
+            }
+            return jsonify(message), 422
+        message = {
+            'status':'success',
+            'message':'Successfully registered.',
+            'url':url_for('login')
+        }
+        return jsonify(message)
     return render_template("register.html")
 
 @app.route("/login", methods=["GET", "POST"])
@@ -144,9 +100,8 @@ def login():
     if 'user_id' in session:
         return redirect('/')
     if request.method == "POST":
-        data = request.get_json()
-        email = data.get("email")
-        password = data.get("password")
+        email = request.form.get("email")
+        password = request.form.get("password")
         if not all([email, password]):
             message = {
                 'status':'error',
@@ -178,6 +133,69 @@ def login():
             return jsonify(message), 401
     return render_template("login.html")
 
+@app.route("/send_email", methods=["POST"])
+def send_email():
+    sender = session["user_id"]
+    receiver_email = request.form.get("receiver_email")
+    subject = request.form.get("subject")
+    body = request.form.get("body")
+    if not receiver_email:
+        message = {
+            'status': 'error',
+            'message':"You must add receiver's email address!"
+        }
+        return jsonify(message), 500
+    if not subject:
+        subject = "Default subject"
+        
+    if not body:
+        message = {
+            'status':'error',
+            'message':"You can't send an empty email!"
+        }
+        return jsonify(message), 500
+    receiver = Users.query.filter_by(email=receiver_email).first()
+    if receiver_email == session["user_email"]:
+        message = {
+            'status':'error',
+            'message':"Can't send email to yourself!!"
+            }
+        return jsonify(message), 500
+    if not receiver:
+        message = {
+            'status': 'error',
+            'message': 'No user with that email'
+        }
+        return jsonify(message), 404
+        
+    new_email = Emails(sender=sender,
+    receiver=receiver.id,
+    subject=subject,
+    body=body,
+    timestamp=datetime.now())
+    try:
+        db.session.add(new_email)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        message = {
+            'status': 'error',
+            'message': 'An internal server error occured'
+        }
+        return jsonify(message), 500
+    message = {
+        'status': 'success',
+        'message': 'Email successfully sent',
+    }
+    return jsonify(message), 200
+    
+# @app.route("/get_update")
+# def get_update():
+#     user_id = session["user_id"]
+#     sent_mails = Emails.query.filter_by(sender=user_id).all()
+#     return jsonify(sent_mails)
+
+
 @app.route("/logout")
 def logout():
     session.clear()
@@ -190,19 +208,30 @@ def profile():
         name = request.form.get("name")
         email = request.form.get("email")
         if not all([id, name, email]):
-            flash("You need to enter all fields.", "error")
-            return redirect(url_for("profile"))
+            message = {
+                'status':'error',
+                'message':'You need to enter all fields'
+            }
+            return jsonify(message), 422
         try:
             stmt = (update(Users).where(Users.id==id).values(name=name, email=email))
             db.session.execute(stmt)
             db.session.commit()
             session["user_name"] = name
             session["user_email"] = email
-            return render_template("profile.html")
+            message = {
+                'status':'success',
+                'message':'Profile successfully updated!',
+                'url':url_for('profile')
+            }
+            return jsonify(message), 200
         except IntegrityError:
-            flash("Email already used by another user!", "error")
+            message= {
+                'status':'error',
+                'message':'Email already used by another user!'
+            }
             db.session.rollback()
-            return redirect(url_for("profile"))
+            return jsonify(message), 500
     else:
         return render_template("profile.html")
 
@@ -252,7 +281,13 @@ def get_emails():
         ).filter(
             or_(Emails.sender == user_id, Emails.receiver == user_id)
         ).all()
-    dict_mails = [{
+    mail_list = []
+    for mail, sender_name, sender_email, receiver_name, receiver_email in mails:
+        if sender_name == session['user_name']:
+            sender_name = session['user_name'] + " (You)"
+        if receiver_name == session['user_name']:
+            receiver_name = session['user_name'] + " (You)"
+        mail_list.append({
             'id': mail.id,
             'sender_name': sender_name,
             'sender_email': sender_email,
@@ -261,9 +296,8 @@ def get_emails():
             'subject': mail.subject,
             'body': mail.body,
             'time': mail.timestamp.isoformat(),
-        } for mail, sender_name, sender_email, receiver_name, receiver_email in mails]
-        
-    return jsonify(dict_mails)
+        })
+    return jsonify(mail_list)
 
 @app.route('/sent_box', methods=['POST','GET'])
 def sent_box():
@@ -313,12 +347,11 @@ def get_email(email_id):
             Emails.id == email_id
         ).first()
         
-        
         if not mail_data:
             return jsonify({'message': 'Email not found.'}), 404
         
         mail, sender_name, sender_email, receiver_name, receiver_email = mail_data
-
+        
         if mail.sender != user_id and mail.receiver != user_id:
             return jsonify({'message': 'Unauthorized access.'}), 403
 
@@ -332,12 +365,12 @@ def get_email(email_id):
             'body': mail.body,
             'timestamp': mail.timestamp.isoformat()
         }
-        
         return jsonify(email_info)
-    except Exception as e:
+    
+    except Exception:
         message = {
             'status':'error',
-            'message':'An error occured'
+            'message':'Database error occured'
         }
         return jsonify(message), 500
     

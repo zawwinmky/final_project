@@ -17,14 +17,14 @@
     <body>
         <nav class="bg-light border navbar navbar-expand-md navbar-light">
             <div class="container-fluid">
-                <a class="navbar-brand" href="/">Mail System</a>
+                <a class="navbar-brand" href="{{url_for('index')}}">Mail System</a>
                 <button aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation" class="navbar-toggler" data-bs-target="#navbar" data-bs-toggle="collapse" type="button">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbar">
                     <ul class="navbar-nav ms-auto mt-2">
                     {% if session["user_id"] %}
-                        <li class="nav-item"><a class="nav-link" href="/inbox" id="inbox">Inbox</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('get_inbox') }}">Inbox</a></li>
                         <li class="nav-item"><a class="nav-link" href="/sent_box">Sent Box</a></li>
                         <li class="nav-item"><a class="nav-link" href="/profile">Profile</a></li>
                         <li class="nav-item"><a class="nav-link" href="/logout">Logout</a></li>
@@ -36,19 +36,27 @@
                 </div>
             </div>
         </nav>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+
         <main class="container p-3 text-center" id="emailDetail">
-            {% block body %}
+            {% block profile %}
+                {% if session['user_id'] %}
+                    <div class="row d-flex justify-content-center overflow-auto">
+                        <table class="table table-bordered table-hover text-start">
+                            <thead>
+                                <tr>
+                                    <th class="col-2">Sender</th>
+                                    <th class="col-2">Receiver</th>
+                                    <th class="col-5">Subject</th>
+                                    <th class="col-3">Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="emailViewer"></tbody>
+                        </table>
+                    </div>
+                {% endif %}
             {% endblock %}
+
+            {% block body %} {% endblock %}
         </main>
     </body>
 </html>

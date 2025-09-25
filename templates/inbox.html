@@ -1,24 +1,6 @@
 {% extends 'layout.html' %}
 
 {% block body %}
-
-    <div class="row d-flex justify-content-center">
-        <div class="row d-flex justify-content-center overflow-auto">
-            <table class="table table-bordered table-hover">
-                <thead>
-                    <tr>
-                        <th class="col-2">Sender</th>
-                        <th class="col-2">Receiver</th>
-                        <th class="col-5">Subject</th>
-                        <th class="col-3">Time</th>
-                    </tr>
-                </thead>
-                <tbody id="emailViewer">
-                </tbody>
-            </table>
-        </div>
-    </div>
-
     <script>
         document.addEventListener('DOMContentLoaded', async function () {
             let emailViewer = document.getElementById("emailViewer");

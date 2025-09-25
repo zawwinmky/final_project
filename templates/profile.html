@@ -2,11 +2,11 @@
 
 {% block title %} Profile {% endblock %}
 
-{% block body %}
+{% block profile %}
     <div class="container">
         <div class="row d-flex justify-content-center text-start">
             <div class="col-4">
-                <form action="/profile" method="post">
+                <form id='updateForm'>
                     <input type="hidden" value=" {{ session['user_id']}} " name="id">
                     <div class="mb-3" style="font-size: larger; font-weight:bold">
                         Profile details
@@ -62,5 +62,33 @@
             toggleVisibility(submitBtn);
             toggleText(button);
         });
+
+        const form = document.getElementById('updateForm');
+        form.addEventListener('submit', async function(event){
+            event.preventDefault();
+            const formData = event.target;
+            const dataForm = new FormData(formData);
+
+            try {
+                const response = await fetch('/profile', {
+                    method:'POST',
+                    body:dataForm
+                });
+                const data = await response.json();
+
+                if (!response.ok)
+                {
+                    throw new Error(data.message);
+                }
+                if (data.status === 'success')
+                {
+                    window.location.href = data.url;
+                    alert(data.message);
+                }
+            } catch (error){
+                alert(error.message);
+            }
+        });
+
     </script>
 {% endblock %}

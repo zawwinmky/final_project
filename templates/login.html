@@ -21,22 +21,12 @@
 
             const form = event.target;
             const formData = new FormData(form);
-            const data = Object.fromEntries(formData.entries());
-            const bodyData = JSON.stringify(data);
 
             try {
                 const response = await fetch('login', {
                     method : 'POST',
-                    headers : {
-                        'Content-Type':'application/json'
-                    },
-                    body : bodyData
+                    body : formData
                 });
-
-                if (response.redirected){
-                    window.location.href = response.url;
-                    return;
-                }
 
                 const data = await response.json()
 
@@ -44,11 +34,11 @@
                     throw new Error(data.message);
                 }
 
-                if (data.status=='success'){
+                if (data.status == 'success'){
                     window.location.href = data.redirect_url;
                 }
             } catch (error) {
-                alert(error.message);
+                alert(error.message);j
             }
         });
     </script>
