@@ -5,7 +5,7 @@
         <div class="text-start">
             <!-- modal button -->
             <button type="button" class="btn btn-outline-dark position-fixed" data-bs-toggle="modal" data-bs-target="#myModal" style="bottom: 20px; left: 20px; z-index: 100;">
-                Write email
+            Write email
             </button>
             <!-- Modal -->
             <div class="modal fade" id="myModal">
@@ -24,8 +24,7 @@
                                 <input class="form-control mb-2" name="receiver_email" type="email" placeholder="Receiver's email address">
                                 <label for="subject">Subject:</label><br>
                                 <input class="form-control mb-2" type="text" name="subject" placeholder="Enter subject">
-                                <textarea rows="5" name="body" placeholder="Write a message" style="color: black;">
-                                </textarea>
+                                <textarea rows="5" name="body" placeholder="Write a message" style="color: black;"></textarea>
                             </div>
                             
                             <!-- Modal footer -->
@@ -40,8 +39,7 @@
             <script>
                 const emailForm = document.getElementById('email_form');
                 emailForm.addEventListener('submit', async function(event) {
-                    event.preventDefault(); 
-                    
+                    event.preventDefault();
                     const form = event.target;
                     const formData = new FormData(form);
                     try {
@@ -68,9 +66,80 @@
                 });
             </script>
         </div>
-        <div class="row justify-content-center d-flex">
-            <div class="col-2 btn btn-outline-dark">Inbox</div>
-            <div class="col-2">Sent box</div>
+        <div class="row d-flex justify-content-center overflow-auto">
+            <table class="table table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th class="col-2">Sender</th>
+                        <th class="col-2">Receiver</th>
+                        <th class="col-5">Subject</th>
+                        <th class="col-3">Time</th>
+                    </tr>
+                </thead>
+                <tbody id="emailViewer">
+                </tbody>
+            </table>
         </div>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', async function () {
+            let emailViewer = document.getElementById("emailViewer");
+
+            async function getEmails() {
+                try {
+                    const response = await fetch('get_emails', {method:'POST'});
+                    const data = await response.json();
+                    let html = '';
+                    if (!response.ok) {
+                        throw new Error(data.message);
+                    }
+
+                    for (let mail of data) {
+                        const mailDate = new Date(mail.time);
+                        const dateFormat = mailDate.toLocaleDateString('en-GB');
+                        html += ' <tr class="pointer" data-mail-id="' + mail.id + '"><td>' + mail.sender_name + ' </td><td> ' + mail.receiver_name + '</td><td>' + mail.subject + '</td><td>' + dateFormat + '</td></tr>';
+                    }
+
+                    emailViewer.innerHTML = html;
+                } catch (error) {
+                    alert("Error is" + error.message);
+                }
+            }
+            getEmails();
+            window.setInterval(getEmails, 30000); 
+
+            emailViewer.addEventListener('click', async function (event){
+                const row = event.target.closest('tr');
+                if (row){
+                    const mailId = row.dataset.mailId;
+
+                    try{
+                        const response = await fetch(`get_email/${mailId}`,{
+                            method: 'POST',
+                            headers: {
+                                'Content-Type':'application/json'
+                            },
+                            body : JSON.stringify({email_id:mailId})
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok)
+                        {
+                            let emailDetail = document.getElementById('emailDetail');
+                            let html = '';
+                            html = `<div class='row d-flex justify-content-center'><div class="col-8 border rounded text-start"> From:Name: Email: <br> To: Name: Email: <br> Subject: <br> Body: <br> </div></div>`;
+                            emailDetail.innerHTML = html;
+                        } else 
+                        {
+                            throw new Error(data.message);
+                        }
+                    } catch (error){
+                        alert(error.message);
+                        console.error(error.message);
+                    }
+                }
+            });
+        });
+    </script>
 {% endblock %}

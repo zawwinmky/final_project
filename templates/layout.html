@@ -11,6 +11,7 @@
 
         <title>{% block title %} Final Project {% endblock %}</title>
         <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+        <script src="{{ url_for('static', filename='main.js') }}"></script>
 
     </head>
     <body>
@@ -23,6 +24,8 @@
                 <div class="collapse navbar-collapse" id="navbar">
                     <ul class="navbar-nav ms-auto mt-2">
                     {% if session["user_id"] %}
+                        <li class="nav-item"><a class="nav-link" href="/inbox" id="inbox">Inbox</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/sent_box">Sent Box</a></li>
                         <li class="nav-item"><a class="nav-link" href="/profile">Profile</a></li>
                         <li class="nav-item"><a class="nav-link" href="/logout">Logout</a></li>
                     {% else %}
@@ -43,7 +46,7 @@
                 {% endfor %}
             {% endif %}
         {% endwith %}
-        <main class="container p-3 text-center">
+        <main class="container p-3 text-center" id="emailDetail">
             {% block body %}
             {% endblock %}
         </main>

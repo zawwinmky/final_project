@@ -1,0 +1,83 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+
+    <div class="row d-flex justify-content-center">
+        <div class="row d-flex justify-content-center overflow-auto">
+            <table class="table table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th class="col-2">Sender</th>
+                        <th class="col-2">Receiver</th>
+                        <th class="col-5">Subject</th>
+                        <th class="col-3">Time</th>
+                    </tr>
+                </thead>
+                <tbody id="emailViewer">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async function () {
+            let emailViewer = document.getElementById("emailViewer");
+
+            async function getData() {
+                try {
+                    const response = await fetch('inbox', {method:'POST'});
+                    const data = await response.json();
+                    let html = '';
+                    if (!response.ok) {
+                        throw new Error(data.message);
+                    }
+
+                    for (let mail of data) {
+                        const mailDate = new Date(mail.time);
+                        const dateFormat = mailDate.toLocaleDateString('en-GB');
+                        html += ' <tr class="pointer" data-mail-id="' + mail.id + '"><td>' + mail.sender_name + ' </td><td> ' + mail.receiver_name + '</td><td>' + mail.subject + '</td><td>' + dateFormat + '</td></tr>';
+                    }
+
+                    emailViewer.innerHTML = html;
+                } catch (error) {
+                    alert("Error is" + error.message);
+                }
+            }
+            getData();
+
+            emailViewer.addEventListener('click', async function (event){
+                const row = event.target.closest('tr');
+                if (row){
+                    const mailId = row.dataset.mailId;
+
+                    try{
+                        const response = await fetch(`get_email/${mailId}`,{
+                            method: 'POST',
+                            headers: {
+                                'Content-Type':'application/json'
+                            },
+                            body : JSON.stringify({email_id:mailId})
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok)
+                        {
+                            let emailDetail = document.getElementById('emailDetail');
+                            let html = '';
+                            html = `<div class='row d-flex justify-content-center'><div class="col-8 border rounded text-start"> From:Name: Email: <br> To: Name: Email: <br> Subject: <br> Body: <br> </div></div>`;
+                            emailDetail.innerHTML = html;
+                        } else 
+                        {
+                            throw new Error(data.message);
+                        }
+                    } catch (error){
+                        alert(error.message);
+                        console.error(error.message);
+                    }
+                }
+            });
+        });
+    </script>
+
+{% endblock %}

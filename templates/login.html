@@ -4,7 +4,7 @@
 
 {% block body %}
 
-    <form action="/login" method="post">
+    <form id="loginForm">
         <div class="mb-3">
             <input autocomplete="off" autofocus class="form-control mx-auto w-auto" name="email" placeholder="Email" type="email">
         </div>
@@ -13,5 +13,44 @@
         </div>
         <button class="btn btn-primary" type="submit">Login</button>
     </form>
+
+    <script>
+        const loginForm = document.getElementById("loginForm");
+        loginForm.addEventListener('submit', async function(event){
+            event.preventDefault();
+
+            const form = event.target;
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+            const bodyData = JSON.stringify(data);
+
+            try {
+                const response = await fetch('login', {
+                    method : 'POST',
+                    headers : {
+                        'Content-Type':'application/json'
+                    },
+                    body : bodyData
+                });
+
+                if (response.redirected){
+                    window.location.href = response.url;
+                    return;
+                }
+
+                const data = await response.json()
+
+                if (!response.ok){
+                    throw new Error(data.message);
+                }
+
+                if (data.status=='success'){
+                    window.location.href = data.redirect_url;
+                }
+            } catch (error) {
+                alert(error.message);
+            }
+        });
+    </script>
 
 {% endblock %}
