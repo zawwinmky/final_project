@@ -21,7 +21,12 @@
                             <!-- Modal body -->
                             <div class="modal-body">
                                 <label for="receiver_email">Send to:</label><br>
-                                <input class="form-control mb-2" name="receiver_email" type="email" placeholder="Receiver's email address">
+                                <input class="form-control mb-2" name="receiver_email" type="email" placeholder="Receiver's email address" list="email-list">
+                                <datalist id="email-list">
+                                    {% for email in emails %}
+                                    <option value="{{email.email}}"></option>
+                                    {% endfor %}
+                                </datalist>
                                 <label for="subject">Subject:</label><br>
                                 <input class="form-control mb-2" type="text" name="subject" placeholder="Enter subject">
                                 <textarea rows="5" name="body" placeholder="Write a message" style="color: black;"></textarea>
@@ -73,7 +78,7 @@
 
             async function getEmails() {
                 try {
-                    const response = await fetch('get_emails', {method:'POST'});
+                    const response = await fetch('get_emails', {method:'GET'});
                     const data = await response.json();
                     let html = '';
                     if (!response.ok) {
@@ -92,8 +97,7 @@
                 }
             }
             getEmails();
-            window.setInterval(getEmails, 30000); 
-
+            window.setInterval(getEmails, 15000); 
         });
     </script>
 {% endblock %}

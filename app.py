@@ -12,6 +12,7 @@ app = Flask(__name__)
 
 app.config["SESSION_TYPE"] = 'filesystem'
 app.config["SESSION_PERMANENT"] = False
+app.config["SECRET_KEY"] = 'default-secret-key'
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 
@@ -69,13 +70,13 @@ def register():
                 'status':'error',
                 'message':'You need to enter all fields'
             }
-            return jsonify(message), 422
+            return jsonify(message), 400
         if password != cpassword:
             message = {
                 'status':'error',
                 'message':'Password must be same.'
             }
-            return jsonify(message), 422
+            return jsonify(message), 400
         new_user = Users(name=name, email=email, password=generate_password_hash(password))
         try:
             db.session.add(new_user)
@@ -86,7 +87,7 @@ def register():
                 'status':'error',
                 'message':'Email already used'
             }
-            return jsonify(message), 422
+            return jsonify(message), 400
         message = {
             'status':'success',
             'message':'Successfully registered.',
@@ -107,15 +108,15 @@ def login():
                 'status':'error',
                 'message':'You need to enter all fields'
                 }
-            return jsonify(message), 500
+            return jsonify(message), 400
         user = Users.query.filter_by(email=email).first()
         if not user:
             message = {
                 'status':'error',
                 'message':"There is no user with that email"
             }
-            return jsonify(message), 500
-        if user and check_password_hash(user.password, password):
+            return jsonify(message), 404
+        if check_password_hash(user.password, password):
             session["user_id"] = user.id
             session["user_name"] = user.name
             session["user_email"] = user.email
@@ -130,10 +131,11 @@ def login():
                 'status':'error',
                 'message':"Incorrect email or password"
             }
-            return jsonify(message), 401
+            return jsonify(message), 400
     return render_template("login.html")
 
 @app.route("/send_email", methods=["POST"])
+@login_require
 def send_email():
     sender = session["user_id"]
     receiver_email = request.form.get("receiver_email")
@@ -144,35 +146,38 @@ def send_email():
             'status': 'error',
             'message':"You must add receiver's email address!"
         }
-        return jsonify(message), 500
+        return jsonify(message), 400
     if not subject:
         subject = "Default subject"
-        
+
     if not body:
         message = {
             'status':'error',
             'message':"You can't send an empty email!"
         }
-        return jsonify(message), 500
+        return jsonify(message), 400
+    
     receiver = Users.query.filter_by(email=receiver_email).first()
-    if receiver_email == session["user_email"]:
-        message = {
-            'status':'error',
-            'message':"Can't send email to yourself!!"
-            }
-        return jsonify(message), 500
     if not receiver:
         message = {
             'status': 'error',
             'message': 'No user with that email'
         }
         return jsonify(message), 404
-        
-    new_email = Emails(sender=sender,
-    receiver=receiver.id,
-    subject=subject,
-    body=body,
-    timestamp=datetime.now())
+    
+    if receiver_email == session["user_email"]:
+        message = {
+            'status':'error',
+            'message':"Can't send email to yourself!!"
+            }
+        return jsonify(message), 400
+
+    new_email = Emails(
+        sender=sender,
+        receiver=receiver.id,
+        subject=subject,
+        body=body,
+        timestamp=datetime.now())
     try:
         db.session.add(new_email)
         db.session.commit()
@@ -180,7 +185,7 @@ def send_email():
         db.session.rollback()
         message = {
             'status': 'error',
-            'message': 'An internal server error occured'
+            'message': 'Database error occurred'
         }
         return jsonify(message), 500
     message = {
@@ -188,13 +193,6 @@ def send_email():
         'message': 'Email successfully sent',
     }
     return jsonify(message), 200
-    
-# @app.route("/get_update")
-# def get_update():
-#     user_id = session["user_id"]
-#     sent_mails = Emails.query.filter_by(sender=user_id).all()
-#     return jsonify(sent_mails)
-
 
 @app.route("/logout")
 def logout():
@@ -202,17 +200,18 @@ def logout():
     return redirect(url_for("login"))
 
 @app.route("/profile", methods=["GET", "POST"])
+@login_require
 def profile():
     if request.method == "POST":
-        id = request.form.get("id")
+        id = session['user_id']
         name = request.form.get("name")
         email = request.form.get("email")
-        if not all([id, name, email]):
+        if not all([name, email]):
             message = {
                 'status':'error',
                 'message':'You need to enter all fields'
             }
-            return jsonify(message), 422
+            return jsonify(message), 400
         try:
             stmt = (update(Users).where(Users.id==id).values(name=name, email=email))
             db.session.execute(stmt)
@@ -235,58 +234,30 @@ def profile():
     else:
         return render_template("profile.html")
 
-
-@app.route('/inbox', methods=['POST', 'GET'])
-def get_inbox():
-    if request.method == 'POST':
-        user_id = session['user_id']
-        Sender = aliased(Users)
-        mails = db.session.query(
-        Emails,
-        Sender.name.label('sender_name'),
-        Sender.email.label('sender_email'),
-        ).join(
-        Sender, Emails.sender == Sender.id
-        ).filter(
-        Emails.receiver == user_id
-        ).all()
-        dict_mails = [{
-        'id':mail.id,
-        'sender_name': sender_name,
-        'sender_email':sender_email,
-        'receiver_name': session['user_name'],
-        'receiver_email': session['user_email'],
-        'subject': mail.subject,
-        'body': mail.body,
-        'time': mail.timestamp.isoformat(),
-        } for mail, sender_name, sender_email in mails]
-        return jsonify(dict_mails)
-    return render_template('inbox.html')
-
-@app.route('/get_emails', methods=['POST'])
+@app.route('/get_emails', methods=['GET'])
+@login_require
 def get_emails():
     user_id = session['user_id']
     Receiver = aliased(Users)
     Sender = aliased(Users)
     mails = db.session.query(
         Emails,
-        Receiver.name.label('receiver_name'),
-        Receiver.email.label('receiver_email'),
         Sender.name.label('sender_name'),
         Sender.email.label('sender_email'),
+        Receiver.name.label('receiver_name'),
+        Receiver.email.label('receiver_email'),
         ).join(
         Sender, Emails.sender == Sender.id
         ).join(
             Receiver, Emails.receiver == Receiver.id
         ).filter(
             or_(Emails.sender == user_id, Emails.receiver == user_id)
+        ).order_by(
+        Emails.timestamp.desc()
         ).all()
+        
     mail_list = []
-    for mail, sender_name, sender_email, receiver_name, receiver_email in mails:
-        if sender_name == session['user_name']:
-            sender_name = session['user_name'] + " (You)"
-        if receiver_name == session['user_name']:
-            receiver_name = session['user_name'] + " (You)"
+    for mail,sender_name, sender_email, receiver_name, receiver_email in mails:
         mail_list.append({
             'id': mail.id,
             'sender_name': sender_name,
@@ -299,7 +270,46 @@ def get_emails():
         })
     return jsonify(mail_list)
 
+@app.route('/inbox', methods=['POST', 'GET'])
+@login_require
+def get_inbox():
+    if request.method == 'POST':
+        user_id = session['user_id']
+        Sender = aliased(Users)
+        try:
+            mails = db.session.query(
+            Emails,
+            Sender.name.label('sender_name'),
+            Sender.email.label('sender_email'),
+            ).join(
+            Sender, Emails.sender == Sender.id
+            ).filter(
+            Emails.receiver == user_id
+            ).order_by(
+            Emails.timestamp.desc()
+            ).all()
+            dict_mails = [{
+            'id':mail.id,
+            'sender_name': sender_name,
+            'sender_email':sender_email,
+            'receiver_name': session['user_name'],
+            'receiver_email': session['user_email'],
+            'subject': mail.subject,
+            'body': mail.body,
+            'time': mail.timestamp.isoformat(),
+            } for mail, sender_name, sender_email in mails]
+            return jsonify(dict_mails)
+        except Exception:
+            message= {
+                'status':'error',
+                'message':'Database error occurred!'
+            }
+            db.session.rollback()
+            return jsonify(message), 500
+    return render_template('inbox.html')
+
 @app.route('/sent_box', methods=['POST','GET'])
+@login_require
 def sent_box():
     if request.method == 'POST':
         user_id = session['user_id']
@@ -312,6 +322,8 @@ def sent_box():
         Receiver, Emails.receiver == Receiver.id
         ).filter(
         Emails.sender == user_id
+        ).order_by(
+        Emails.timestamp.desc()
         ).all()
         dict_mails = [{
         'id':mail.id,
@@ -326,8 +338,9 @@ def sent_box():
         return jsonify(dict_mails)
     return render_template('sent_box.html')
 
-@app.route('/get_email/<int:email_id>', methods=['POST'])
-def get_email(email_id):
+@app.route('/email_detail/<int:email_id>', methods=['POST'])
+@login_require
+def email_detail(email_id):
     user_id = session["user_id"]
     
     try:
@@ -370,19 +383,30 @@ def get_email(email_id):
     except Exception:
         message = {
             'status':'error',
-            'message':'Database error occured'
+            'message':'Database error occurred'
         }
         return jsonify(message), 500
     
-#Error handlings
-@app.errorhandler(405)
-def method_not_allow(error):
-    return redirect('/')
-
-@app.errorhandler(500)
-def server_error(error):
-    message = {
-        'status':'error',
-        'message':'Opps, an error occured!'
+#Error handling
+@app.errorhandler(Exception)
+def handle_errors(error):
+    code = getattr(error, 'code', 500)
+    
+    #method not allowed
+    if code == 405:
+        return redirect('/')
+    
+    messages = {
+        400: 'Bad request!',
+        401: 'Unauthorized!',
+        403: 'Forbidden!',
+        404: 'Not found!',
+        409: 'Conflict!',
+        422: 'Validation error!',
+        500: 'Internal server error!'
     }
-    return jsonify(message), 500
+    
+    return jsonify({
+        'status': 'error',
+        'message': messages.get(code, 'An error occurred!')
+    }), code

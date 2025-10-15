@@ -7,3 +7,78 @@ textarea
 {
     cursor: pointer;
 }
+
+
+#emailModal .modal-body {
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+#emailModal .modal-body h6 {
+    font-size: 1rem;
+    color: #495057;
+    margin-bottom: 0.25rem;
+    padding-bottom: 3px;
+    font-weight: bold;
+    text-decoration: underline;
+}
+#modalBodySubject {
+    text-decoration: none;
+}
+
+#subHeader{
+    text-decoration: underline;
+}
+
+.subject-header-row {
+    text-decoration: none !important;
+}
+
+.detail-row {
+    display: flex;
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+    line-height: 1.4;
+}
+
+.detail-label {
+    font-weight: bold; 
+    color: #6c757d; 
+    font-size: 0.9rem;
+    min-width: 60px;
+    margin-left: 5px;
+}
+
+.email-detail {
+    font-style: italic;
+}
+
+.detail-value {
+    font-weight: 400;
+    color: #212529;
+}
+
+.email-body-content {    
+    font-size: 1rem;
+    line-height: 1.6;
+    padding-top: 5px;
+    margin-top: 5px !important;
+    text-indent: 15px;
+}
+
+.subject-text-inline {
+    font-weight: normal; 
+    margin-left: 5px;
+    color: #212529;
+    flex-grow: 1;
+}
+
+
+.subject-header-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem !important;
+    font-size: 1rem;
+    font-weight: 600;
+    padding-bottom: 0;
+}
