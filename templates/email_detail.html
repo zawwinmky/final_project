@@ -1,0 +1,41 @@
+{% extends "layout.html" %}
+
+{% block profile %}
+<div class="email-details-header border rounded p-2">
+    <h6>From: </h6>
+    <div class="detail-row">
+        <span class="detail-label">Name:</span> <span id="senderName" class="detail-value"></span>
+    </div>
+    <div class="detail-row">
+        <span class="detail-label">Email:</span><span id="senderEmail"
+            class="detail-value email-detail"></span>
+    </div>
+    <h6 class="mt-2">To: </h6>
+    <div class="detail-row">
+        <span class="detail-label">Name:</span> <span id="receiverName" class="detail-value"></span>
+    </div>
+    <div class="detail-row">
+        <span class="detail-label">Email:</span> <span id="receiverEmail" class="detail-value  email-detail"></span>
+    </div>
+    <h6 class="mt-2 subject-header-row"> <span id="subHeader">Subject: </span> <span id="subject" class="subject-text-inline"> </span></h6>
+    <div id="body" class="mt-3 email-body-content"> </div>
+</div>
+</div>
+
+<script>
+const storedData = sessionStorage.getItem('redirectData');
+
+if (storedData) {
+    const data = JSON.parse(storedData);
+
+    document.getElementById('senderName').innerHTML = data.sender_name;
+    document.getElementById('senderEmail').innerHTML = data.sender_email;
+    document.getElementById('receiverName').innerHTML = data.receiver_name;
+    document.getElementById('receiverEmail').innerHTML = data.receiver_email;
+    document.getElementById('subject').innerHTML = data.subject;
+    document.getElementById('body').innerHTML = data.body;
+
+}
+</script>
+
+{% endblock %}

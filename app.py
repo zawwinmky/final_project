@@ -7,14 +7,20 @@ from sqlalchemy import update, or_ # type: ignore
 from sqlalchemy.orm import aliased # type: ignore
 from datetime import datetime
 from functools import wraps
+from dotenv import load_dotenv
+import os
 
 app = Flask(__name__)
 
+load_dotenv()
+
 app.config["SESSION_TYPE"] = 'filesystem'
 app.config["SESSION_PERMANENT"] = False
-app.config["SECRET_KEY"] = 'default-secret-key'
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
+if not app.config["SECRET_KEY"]:
+    raise ValueError("No SECRET_KEY set in environment")
 
 Session(app)
 db = SQLAlchemy(app)
@@ -234,6 +240,69 @@ def profile():
     else:
         return render_template("profile.html")
 
+@app.route('/change_password', methods=['POST'])
+@login_require
+def change_password():
+    data = request.get_json(silent=True)
+    if data is None:
+        message = {
+            'status':'error',
+            'message':'Invalid or Missing JSON in request'
+        }
+        return jsonify(message), 400
+
+    password = data.get('current_password')
+    nPassword = data.get('new_password')
+    cPassword = data.get('confirm_password')
+    
+    if not all([password, nPassword, cPassword]):
+        message = {
+            'status':'error',
+            'message':'You need to enter all fields'
+        }
+        return jsonify(message), 400
+
+    if nPassword != cPassword:
+        message = {
+            'status':'error',
+            'message':'New passwords must be same.'
+        }
+        return jsonify(message), 400
+    
+    user = Users.query.filter_by(id=session['user_id']).first()
+    
+    if user and not check_password_hash(user.password, password):
+        message = {
+            'status':'error',
+            'message':'Your current password is incorrect.'
+        }
+        return jsonify(message), 400
+    
+    if user and check_password_hash(user.password, nPassword):
+        message = {
+            'status' : 'error',
+            'message' : 'New password cannot be old password'
+        }
+        return jsonify(message), 400
+    
+    user.password = generate_password_hash(nPassword)
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        message = {
+            'status': 'error',
+            'message': 'An internal error occurred while changing the password.'
+        }
+        return jsonify(message), 500
+
+    message = {
+        'status': 'success',
+        'message': 'Your password has been successfully updated.'
+    }
+    return jsonify(message), 200
+    
 @app.route('/get_emails', methods=['GET'])
 @login_require
 def get_emails():
@@ -342,10 +411,10 @@ def sent_box():
 @login_require
 def email_detail(email_id):
     user_id = session["user_id"]
+    Receiver = aliased(Users)
+    Sender = aliased(Users)
     
     try:
-        Sender = aliased(Users)
-        Receiver = aliased(Users)
         mail_data = db.session.query(
             Emails,
             Sender.name.label('sender_name'),
@@ -361,7 +430,11 @@ def email_detail(email_id):
         ).first()
         
         if not mail_data:
-            return jsonify({'message': 'Email not found.'}), 404
+            message = {
+                'status' : 'error',
+                'message': 'Email not found.'
+            }
+            return jsonify(message), 404
         
         mail, sender_name, sender_email, receiver_name, receiver_email = mail_data
         
@@ -369,6 +442,8 @@ def email_detail(email_id):
             return jsonify({'message': 'Unauthorized access.'}), 403
 
         email_info = {
+            'status' :'success',
+            'url': url_for('email_info'),
             'id': mail.id,
             'sender_name': sender_name,
             'sender_email': sender_email,
@@ -378,7 +453,7 @@ def email_detail(email_id):
             'body': mail.body,
             'timestamp': mail.timestamp.isoformat()
         }
-        return jsonify(email_info)
+        return jsonify(email_info), 200
     
     except Exception:
         message = {
@@ -387,6 +462,10 @@ def email_detail(email_id):
         }
         return jsonify(message), 500
     
+@app.route("/email_info")
+@login_require
+def email_info():
+    return render_template('email_detail.html')
 #Error handling
 @app.errorhandler(Exception)
 def handle_errors(error):

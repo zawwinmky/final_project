@@ -4,11 +4,11 @@
     <div class="container-fluid">
         <div class="text-start">
             <!-- modal button -->
-            <button type="button" class="btn btn-outline-dark position-fixed" data-bs-toggle="modal" data-bs-target="#myModal" style="bottom: 20px; left: 20px; z-index: 100;">
+            <button type="button" class="btn btn-outline-dark position-fixed" data-bs-toggle="modal" data-bs-target="#mailModal" style="bottom: 20px; left: 20px; z-index: 100;">
             Write email
             </button>
             <!-- Modal -->
-            <div class="modal fade" id="myModal">
+            <div class="modal fade" id="mailModal">
                 <div class="modal-dialog">
                     <div class="modal-content">
 
@@ -41,6 +41,7 @@
                     </div>
                 </div>
             </div>
+
             <script>
                 const emailForm = document.getElementById('email_form');
                 emailForm.addEventListener('submit', async function(event) {
@@ -61,7 +62,7 @@
 
                         alert(data.message);
                         form.reset();
-                        const myModal = bootstrap.Modal.getInstance(document.getElementById('myModal'));
+                        const myModal = bootstrap.Modal.getInstance(document.getElementById('mailModal'));
                         if (myModal) {
                             myModal.hide();
                         }
@@ -72,32 +73,37 @@
             </script>
         </div>
     </div>
+
     <script>
-        document.addEventListener('DOMContentLoaded', async function () {
-            const emailViewer = document.getElementById("emailViewer");
 
-            async function getEmails() {
-                try {
-                    const response = await fetch('get_emails', {method:'GET'});
-                    const data = await response.json();
-                    let html = '';
-                    if (!response.ok) {
-                        throw new Error(data.message);
-                    }
-
-                    for (let mail of data) {
-                        const mailDate = new Date(mail.time);
-                        const dateFormat = mailDate.toLocaleDateString('en-GB');
-                        html += ` <tr class="pointer" data-mail-id="${mail.id}" ><td>${mail.sender_name} </td><td> ${mail.receiver_name} </td><td> ${mail.subject} </td><td> ${dateFormat}  </td></tr>`;
-                    }
-
-                    emailViewer.innerHTML = html;
-                } catch (error) {
-                    alert("Error is" + error.message);
-                }
+document.addEventListener('DOMContentLoaded', async function () {
+    const emailViewer = document.getElementById("emailViewer");
+    async function getAllMails() {
+        try {
+            const response = await fetch('get_emails', { method: 'GET' });
+            const data = await response.json();
+            let html = '';
+            if (!response.ok) {
+                throw new Error(data.message);
             }
-            getEmails();
-            window.setInterval(getEmails, 15000); 
-        });
+
+            for (let mail of data) {
+                const mailDate = new Date(mail.time);
+                const dateFormat = mailDate.toLocaleDateString('en-GB');
+                html += ` <tr class="pointer" data-mail-id="${mail.id}" ><td>${mail.sender_name} </td><td> ${mail.receiver_name} </td><td> ${mail.subject} </td><td> ${dateFormat}  </td></tr>`;
+            }
+
+            emailViewer.innerHTML = html;
+        } catch (error) {
+            alert("Error is ===> " + error.message);
+        }
+    }
+    getAllMails();
+    window.setInterval(getAllMails, 15000);
+});
+
     </script>
+
+
+
 {% endblock %}

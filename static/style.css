@@ -22,13 +22,6 @@ textarea
     font-weight: bold;
     text-decoration: underline;
 }
-#modalBodySubject {
-    text-decoration: none;
-}
-
-#subHeader{
-    text-decoration: underline;
-}
 
 .subject-header-row {
     text-decoration: none !important;

@@ -48,7 +48,7 @@
         {% block profile %}
         {% if session['user_id'] %}
         <div class="row d-flex justify-content-center overflow-auto">
-            <table class="table table-bordered table-hover text-start">
+            <table class="table table-bordered table-hover text-start table-striped">
                 <thead>
                     <tr>
                         <th class="col-2">Sender</th>
@@ -63,47 +63,12 @@
         {% endif %}
         {% endblock %}
 
-
-        <div class="modal fade" id="emailModal" tabindex="-1" aria-labelledby="emailModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="emailModalLabel">Email Details</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="modal-body">
-                            <div class="email-details-header">
-                                <h6>From: </h6>
-                                <div class="detail-row">
-                                    <span class="detail-label">Name:</span> <span id="modalSenderName" class="detail-value"></span>
-                                </div>
-                                <div class="detail-row">
-                                    <span class="detail-label">Email:</span> <span id="modalSenderEmail" class="detail-value email-detail"></span>
-                                </div>
-                                <h6 class="mt-2">To: </h6>
-                                <div class="detail-row">
-                                    <span class="detail-label">Name:</span> <span id="modalReceiverName" class="detail-value"></span>
-                                </div>
-                                <div class="detail-row">
-                                    <span class="detail-label">Email:</span> <span id="modalReceiverEmail" class="detail-value  email-detail"></span>
-                                </div>
-                                <h6 class="mt-2 subject-header-row"> <span id="subHeader">Subject: </span> <span id="modalBodySubject" class="subject-text-inline"></span></h6>
-                            </div>
-                            <div id="modalEmailBody" class="mt-3 email-body-content"></div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    </div>
-                </div>
-            </div>
-        </div>
         <div class="row justify-content-center">
             {% block body %} {% endblock %}
         </div>
-        
+
     </main>
 </body>
 
 </html>
+

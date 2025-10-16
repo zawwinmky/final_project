@@ -3,91 +3,138 @@
 {% block title %} Profile {% endblock %}
 
 {% block profile %}
-    <div class="container">
-        <div class="row d-flex justify-content-center text-start">
-            <div class="col-4">
-                <form id='updateForm'>
-                    <div class="mb-3" style="font-size: larger; font-weight:bold">
-                        Profile details
-                    </div>
-                    <div class="my-3">
-                        <label for="name" style="font-weight: bold;">Name:</label>
-                        <input type="text" name="name" value="{{ session['user_name'] }}" id="nameInput" style="display: none;"> <p id="nameText" style="display: inline-block; margin-bottom:0;"> {{ session['user_name']}} </p>
-                    </div>
-                    <div class="my-3">
-                        <label for="email" style="font-weight: bold;">Email:</label>
-                        <input type="email" name="email" value="{{ session['user_email'] }}" id="emailInput" style="display: none;">
-                        <p id="emailText" style="display: inline-block; margin-bottom:0;"> {{ session['user_email'] }}</p>
-                    </div>
-                    <input class="btn btn-outline-dark" type="button" id="editBtn" value="Edit profile">
-                    <input class="btn btn-outline-dark" type="submit" id="submitBtn" value="Update" style="display: none;">
-                </form>
-            </div>
+<div class="container">
+    <div class="row d-flex justify-content-center text-start">
+        <div class="col-4">
+            <form id='updateForm'>
+                <div class="mb-3" style="font-size: larger; font-weight:bold">
+                    Profile details
+                </div>
+                <div class="my-3">
+                    <label for="name" style="font-weight: bold;">Name:</label>
+                    <input type="text" name="name" value="{{ session['user_name'] }}" id="nameInput"
+                        style="display: none;">
+                    <p id="nameText" style="display: inline-block; margin-bottom:0;"> {{ session['user_name']}} </p>
+                </div>
+                <div class="my-3">
+                    <label for="email" style="font-weight: bold;">Email:</label>
+                    <input type="email" name="email" value="{{ session['user_email'] }}" id="emailInput"
+                        style="display: none;">
+                    <p id="emailText" style="display: inline-block; margin-bottom:0;"> {{ session['user_email'] }}</p>
+                </div>
+                <div class="my-3" id="passwordBox">
+                    <label for="password" style="font-weight: bold;">Password:</label><br>
+                    <input autofocus autocomplete="new-password" class="mt-2" type="password" name="password" id="password" placeholder="Current Password"><br>
+                    <input autocomplete="new-password" class="mt-2" type="password" name="nPassword" id="nPassword" placeholder="New Password"><br>
+                    <input autocomplete="new-password" class="mt-2" type="password" name="cPassword" id="cPassword" placeholder="Confirm Password">
+                </div>
+                <input class="btn btn-outline-dark" type="button" id="changePassword" value="Change Password">
+                <input class="btn btn-outline-dark" type="button" id="editBtn" value="Edit profile">
+                <input class="btn btn-outline-dark" type="submit" id="submitBtn" value="Update" style="display: none;">
+            </form>
         </div>
     </div>
+</div>
 
-    <script>
+<script>
 
-        function toggleVisibility(element){
-            if (element.style.display == "none"){
-                element.style.display = "inline-block";
-            } else
-            {
-                element.style.display = "none";
-            }
+    function toggleVisibility(element) {
+        if (element.style.display == "none") {
+            element.style.display = "inline-block";
+        } else {
+            element.style.display = "none";
         }
+    }
 
-        function toggleText(element){
-            if (element.value.trim() === "Cancel")
-            {
-                element.value = "Edit profile";
-            } else {
-                element.value = "Cancel";
-            }
+    function toggleText(element) {
+        if (element.value.trim() === "Cancel") {
+            element.value = "Edit profile";
+        } else {
+            element.value = "Cancel";
         }
+    }
 
-        let nameInput = document.getElementById("nameInput");
-        let nameText = document.getElementById("nameText");
-        let emailText = document.getElementById("emailText");
-        let emailInput = document.getElementById("emailInput");
-        let submitBtn = document.getElementById("submitBtn");
-        let button = document.getElementById("editBtn");
+    const nameInput = document.getElementById("nameInput");
+    const nameText = document.getElementById("nameText");
+    const emailText = document.getElementById("emailText");
+    const emailInput = document.getElementById("emailInput");
+    const submitBtn = document.getElementById("submitBtn");
+    const button = document.getElementById("editBtn");
+    
 
-        button.addEventListener("click", function (){
-            toggleVisibility(nameInput);
-            toggleVisibility(nameText);
-            toggleVisibility(emailText);
-            toggleVisibility(emailInput);
-            toggleVisibility(submitBtn);
-            toggleText(button);
-        });
+    button.addEventListener("click", function () {
+        toggleVisibility(nameInput);
+        toggleVisibility(nameText);
+        toggleVisibility(emailText);
+        toggleVisibility(emailInput);
+        toggleVisibility(submitBtn);
+        toggleText(button);
+    });
 
-        const form = document.getElementById('updateForm');
-        form.addEventListener('submit', async function(event){
-            event.preventDefault();
-            const formData = event.target;
-            const dataForm = new FormData(formData);
+    const form = document.getElementById('updateForm');
+    form.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        const formData = event.target;
+        const dataForm = new FormData(formData);
 
-            try {
-                const response = await fetch('/profile', {
-                    method:'POST',
-                    body:dataForm
-                });
-                const data = await response.json();
+        try {
+            const response = await fetch('/profile', {
+                method: 'POST',
+                body: dataForm
+            });
+            const data = await response.json();
 
-                if (!response.ok)
-                {
-                    throw new Error(data.message);
-                }
-                if (data.status === 'success')
-                {
-                    window.location.href = data.url;
-                    alert(data.message);
-                }
-            } catch (error){
-                alert(error.message);
+            if (!response.ok) {
+                throw new Error(data.message);
             }
-        });
+            if (data.status === 'success') {
+                window.location.href = data.url;
+                alert(data.message);
+            }
+        } catch (error) {
+            alert(error.message);
+        }
+    });
+</script>
 
-    </script>
+<script>
+    document.addEventListener('DOMContentLoaded', async function(){
+        const changePassword = document.getElementById("changePassword");
+        const password = document.getElementById("password");
+        const nPassword = document.getElementById("nPassword");
+        const cPassword = document.getElementById("cPassword");
+
+        changePassword.addEventListener('click', async function () {
+
+        const passwordInfo = {
+            'current_password': password.value,
+            'new_password': nPassword.value,
+            'confirm_password': cPassword.value
+        };
+
+        try {
+            const response = await fetch('/change_password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(passwordInfo)
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.message);
+            }
+            if (data.status === 'success') {
+                password.value = '';
+                nPassword.value ='';
+                cPassword.value ='';
+                alert(data.message);
+            }
+        } catch (error) {
+            alert(error.message)
+        }
+    });
+
+    });
+</script>
+
 {% endblock %}
