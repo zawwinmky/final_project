@@ -1,6 +1,8 @@
-# Email System for CS50 Final Project
+# Email System using Flask for CS50 Final Project
 
-## Description
+### Video Demo: 
+
+### Description
 A simple email management system built as the final project for CS50. This application handles email operations efficiently and securely.
 
 ## Features
