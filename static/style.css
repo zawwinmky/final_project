@@ -9,12 +9,12 @@ textarea
 }
 
 
-#emailModal .modal-body {
+.modal-body {
     padding-top: 5px;
     padding-bottom: 5px;
 }
 
-#emailModal .modal-body h6 {
+.modal-body h6 {
     font-size: 1rem;
     color: #495057;
     margin-bottom: 0.25rem;

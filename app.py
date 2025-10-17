@@ -7,7 +7,7 @@ from sqlalchemy import update, or_ # type: ignore
 from sqlalchemy.orm import aliased # type: ignore
 from datetime import datetime
 from functools import wraps
-from dotenv import load_dotenv
+from dotenv import load_dotenv # type: ignore
 import os
 
 app = Flask(__name__)
@@ -466,6 +466,53 @@ def email_detail(email_id):
 @login_require
 def email_info():
     return render_template('email_detail.html')
+
+@app.route("/delete_mail", methods=['POST'])
+@login_require
+def delete_mail():
+    data = request.get_json(silent=True)
+    if data is None:
+        message = {
+            'status':'error',
+            'message':'Invalid or Missing JSON in request'
+        }
+        return jsonify(message), 400
+
+    id = int(data.get('id'))
+    if id is None:
+        message = {
+            'status':'error',
+            'message':'Missing id field in JSON'
+        }
+        return jsonify(message), 400
+
+    try:
+        result = db.session.query(Emails).filter(Emails.id == id).delete()
+    
+        if result:
+            db.session.commit()
+            message = {
+            'status': 'success',
+            'message': 'Email successfully deleted',
+            'url': url_for('index')
+            }
+            return jsonify(message), 200
+        else:
+            message = {
+            'status': 'error',
+            'message': 'No email with this id'
+        }
+        return jsonify(message), 404
+
+    except Exception as e:
+        print(e)
+        db.session.rollback()
+        message = {
+            'status': 'error',
+            'message': 'Database error occurred'
+        }
+        return jsonify(message), 500
+
 #Error handling
 @app.errorhandler(Exception)
 def handle_errors(error):

@@ -7,8 +7,7 @@
         <span class="detail-label">Name:</span> <span id="senderName" class="detail-value"></span>
     </div>
     <div class="detail-row">
-        <span class="detail-label">Email:</span><span id="senderEmail"
-            class="detail-value email-detail"></span>
+        <span class="detail-label">Email:</span><span id="senderEmail" class="detail-value email-detail"></span>
     </div>
     <h6 class="mt-2">To: </h6>
     <div class="detail-row">
@@ -18,24 +17,73 @@
         <span class="detail-label">Email:</span> <span id="receiverEmail" class="detail-value  email-detail"></span>
     </div>
     <h6 class="mt-2 subject-header-row"> <span id="subHeader">Subject: </span> <span id="subject" class="subject-text-inline"> </span></h6>
-    <div id="body" class="mt-3 email-body-content"> </div>
+    <div id="body" class="mt-3 email-body-content"></div>
+    
+    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#smallModal">Delete mail</button>
+        
+        <div class="modal fade" id="smallModal" tabindex="-1" aria-labelledby="smallModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-sm">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="smallModalLabel">Confirm delete</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body border-none">
+                        Are you sure to delete the mail.
+                    </div>
+                    <div class="modal-footer">
+                        
+                        <button type="button" class="btn btn-danger" id="delMailBtn">Yes</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 </div>
-</div>
-
 <script>
-const storedData = sessionStorage.getItem('redirectData');
-
-if (storedData) {
+    const storedData = sessionStorage.getItem('redirectData');
     const data = JSON.parse(storedData);
+    const mailId = data.id;
 
-    document.getElementById('senderName').innerHTML = data.sender_name;
-    document.getElementById('senderEmail').innerHTML = data.sender_email;
-    document.getElementById('receiverName').innerHTML = data.receiver_name;
-    document.getElementById('receiverEmail').innerHTML = data.receiver_email;
-    document.getElementById('subject').innerHTML = data.subject;
-    document.getElementById('body').innerHTML = data.body;
+    if (data) {
+        document.getElementById('senderName').innerHTML = data.sender_name;
+        document.getElementById('senderEmail').innerHTML = data.sender_email;
+        document.getElementById('receiverName').innerHTML = data.receiver_name;
+        document.getElementById('receiverEmail').innerHTML = data.receiver_email;
+        document.getElementById('subject').innerHTML = data.subject;
+        document.getElementById('body').innerHTML = data.body;
 
-}
+    }
+    const delMailBtn = document.getElementById('delMailBtn');
+    delMailBtn.addEventListener('click', async function () {
+
+        try {
+
+            if (!mailId) {
+                console.error('No mail ID provided');
+                alert('No mail ID provided');
+                return;
+            }
+
+            const response = await fetch('/delete_mail', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: mailId })
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+                alert(data.message);
+                window.location.href = data.url;
+            } else {
+                throw new Error(data.message);
+            }
+
+        } catch (error) {
+            alert(error.message);
+        }
+
+    });
 </script>
 
 {% endblock %}
